@@ -6,8 +6,10 @@ var gutil = require('gulp-util');
 var c = gutil.colors;
 var es = require('event-stream');
 var extend = require('xtend');
+var fs = require('fs');
 var path = require('path');
 var spawn = require('child_process').spawn;
+var tmp = require('tmp');
 
 var server = require('karma').server;
 
@@ -63,23 +65,35 @@ var karmaPlugin = function(options) {
 
   function startKarmaServer() {
     gutil.log('Starting Karma server...');
+    // Run Karma from the same instance of node that was used to start the process
+    var nodePath = process.execPath;
 
-    // Start the server
-    child = spawn(
-      'node',
-      [
-        path.join(__dirname, 'lib', 'background.js'),
-        JSON.stringify(options)
-      ],
-      {
-        stdio: 'inherit'
-      }
-    );
+    // Write to temp file to avoid ENAMETOOLONG error with large `options` input
+    tmp.setGracefulCleanup();
+    tmp.file(function _tempFileCreated(err, tmpPath, fd, cleanupCallback) {
+      if (err) throw err;
+      fs.writeFile(tmpPath, JSON.stringify(options), function (err) {
+        if (err) throw err;
+      });
 
-    // Cleanup when the child process exits
-    child.on('exit', function(code) {
-      // gutil.log('Karma child process ended');
-      done(code);
+      // Start the server
+      child = spawn(
+        nodePath,
+        [
+          path.join(__dirname, 'lib', 'background.js'),
+          tmpPath
+        ],
+        {
+          stdio: 'inherit'
+        }
+      );
+
+      // Cleanup when the child process exits
+      child.on('exit', function(code) {
+        // gutil.log('Karma child process ended');
+        cleanupCallback();
+        done(code);
+      });
     });
   }
 
