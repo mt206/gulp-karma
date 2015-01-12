@@ -4,10 +4,11 @@
   "description": "Karma plugin for gulp",
   "main": "index.js",
   "dependencies": {
-    "optimist": "~0.6.0",
+    "event-stream": "~3.0.20",
     "gulp-util": "~2.2.14",
-    "xtend": "~2.1.1",
-    "event-stream": "~3.0.20"
+    "optimist": "~0.6.0",
+    "tmp": "0.0.24",
+    "xtend": "~2.1.1"
   },
   "peerDependencies": {
     "karma": ">=0.10 <=0.13"
